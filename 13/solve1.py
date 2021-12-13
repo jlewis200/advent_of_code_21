@@ -21,9 +21,6 @@ with open(file_name, "r") as in_file:
             fold = int(line.strip().split("=")[-1])
             folds.append(("x", fold))
 
-
-
-
     coords = np.asarray(coords, np.int64)
 
     x_sz = coords[:, 0].max() + 1
@@ -55,20 +52,16 @@ with open(file_name, "r") as in_file:
                     x_0 -= 1
                     x_1 += 1
 
-#            grid = grid[:fold[1], :]
+            grid = grid[:fold[1], :]
 
     np.set_printoptions(threshold=np.inf)
-    print(grid.T)
-    print((grid > 0).sum())
 
 
-    with open("result2.txt", "w") as out_file:
-        for y in range(grid.shape[1]):
-            for x in range(grid.shape[0]):
-                if grid[x, y] > 0:
-                    out_file.write("#")
-                else:
-                    out_file.write(" ")
-            out_file.write("\n")
+    for y in range(grid.shape[1]):
+        for x in range(grid.shape[0]):
+            if grid[x, y] > 0:
+                print("#", end='')
+            else:
+                print(" ", end='')
+        print("")
 
-    interact(local=locals()) 
