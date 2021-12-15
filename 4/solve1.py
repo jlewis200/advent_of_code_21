@@ -7,14 +7,19 @@ from code import interact
 file_name = "input"
 #file_name = "test_data"
 
-def check_board(bb):    
+def check_board(bb):   
+    """
+    bb is a numpy array with shape (5, 5)
+    """
 
     res = False
 
     for idx  in range(5):
+        #sum along row 'idx'
         if bb[idx, :].sum() == 5:
             res = True
 
+        #sum along column 'idx'
         elif bb[:, idx].sum() == 5:
             res = True
         
