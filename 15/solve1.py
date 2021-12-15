@@ -6,64 +6,60 @@ from code import interact
 file_name = "input"
 #file_name = "test_data"
 
-class Node:
-    def __init__(self, x, y, weight):
-        self.x = x
-        self.y = y
-        self.comp = False
-        self.weight = weight
-        self.path = np.inf
+def update(weight, path, idx, jdx, idx_, jdx_):
+    res = False
 
-def update(data, idx, jdx, idx_, jdx_):
     if idx_ >= 0 and \
-       idx_ < data.shape[0] and \
+       idx_ < weight.shape[0] and \
        jdx_ >= 0 and \
-       jdx_ < data.shape[1]:
+       jdx_ < weight.shape[1]:
 
-        tent_path = data[idx, jdx].path + data[idx_, jdx_].weight
-        if tent_path < data[idx_, jdx_].path:
-            data[idx_, jdx_].path = tent_path
+        tent_path = path[idx, jdx] + weight[idx_, jdx_]
+        if tent_path < path[idx_, jdx_]:
+            path[idx_, jdx_] = tent_path
+            res = True
+
+    return res
  
 def sort_f(node):
-    return node.path
+    return node[0]
 
 with open(file_name, "r") as in_file:
-
-    data = list()
-
+    weight = list()
     jdx = 0
     for line in in_file:
-        numbers = list(line.strip())
-        data.append([Node(idx, jdx, int(numbers[idx])) for idx in range(len(numbers))])
+        weight.append(list(line.strip()))
         jdx += 1
 
-    data = np.asarray(data)
-    path = np.full(shape=data.shape, fill_value=np.inf)
-    data[0, 0].path = 0
+    weight = np.asarray(weight, dtype=np.int64)
+    complete = np.full(shape=weight.shape, fill_value=False)
+    path = np.full(shape=weight.shape, fill_value=np.inf)
+    path[0, 0] = 0
 
-    nodes = list()
-    for idx in range(data.shape[0]):
-        for jdx in range(data.shape[1]):
-            nodes.append(data[idx, jdx])
-    
-    while len(nodes) > 0:
-        nodes.sort(key=sort_f)
-        node = nodes.pop(0)
-        idx = node.y
-        jdx = node.x
+    nodes = [(path[0, 0], (0, 0))] 
+    coord = (0, 0)
 
+    while not complete[coord]:
         #update left
-        update(data, idx, jdx, idx - 1, jdx)
+        coord_ = (coord[0] - 1, coord[1])
+
+        update(weight, path, *coord, *coord_)
 
         #update down
-        update(data, idx, jdx, idx, jdx + 1)
+        coord_ = (coord[0], coord[1] + 1)
+        update(weight, path, *coord, *coord_)
 
         #update right
-        update(data, idx, jdx, idx + 1, jdx)
+        coord_ = (coord[0] + 1, coord[1])
+        update(weight, path, *coord, *coord_)
 
         #update up
-        update(data, idx, jdx, idx, jdx - 1)
-            
+        coord_ = (coord[0], coord[1] - 1)
+        update(weight, path, *coord, *coord_)
+        
 
-    print(data[-1 ,-1].path)
-    interact(local=locals())
+        complete[coord] = True
+        mask = ~((path != np.inf) &  (complete == False))
+        coord = np.unravel_index(np.ma.MaskedArray(path, mask).argmin(), path.shape)
+ 
+    print(path[-1 ,-1])

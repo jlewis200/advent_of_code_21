@@ -6,7 +6,9 @@ from code import interact
 file_name = "input"
 #file_name = "test_weight"
 
-def update(weight, idx, jdx, idx_, jdx_):
+def update(weight, path, idx, jdx, idx_, jdx_):
+    res = False
+
     if idx_ >= 0 and \
        idx_ < weight.shape[0] and \
        jdx_ >= 0 and \
@@ -15,6 +17,10 @@ def update(weight, idx, jdx, idx_, jdx_):
         tent_path = weight[idx, jdx].path + weight[idx_, jdx_].weight
         if tent_path < weight[idx_, jdx_].path:
             weight[idx_, jdx_].path = tent_path
+            res = True
+
+    return res
+
  
 def sort_f(node):
     return node.path
@@ -25,7 +31,9 @@ def get_val(val):
     else:
         return (val % 10) + 1
 
+
 with open(file_name, "r") as in_file:
+
     weight = list()
 
     jdx = 0
@@ -42,20 +50,15 @@ with open(file_name, "r") as in_file:
     tmp = weight.copy()
     for idx in range(1, 5):
         for line in tmp:
-            #tmp2 = [Node(node.x, node.y + (idx * len(tmp)), max(1, (node.weight + idx) % 10)) for node in line]
             tmp2 = [Node(node.x, node.y + (idx * len(tmp)), get_val(node.weight + idx)) for node in line]
             weight.append(tmp2)
 
     weight = np.asarray(weight)
-    interact(local=locals())
-    path = np.full(shape=weight.shape, fill_value=np.inf)
     weight[0, 0].path = 0
 
-    nodes = list()
-    for idx in range(weight.shape[0]):
-        for jdx in range(weight.shape[1]):
-            nodes.append(weight[idx, jdx])
+    nodes = [weight[0, 0]]
     
+    nodes.sort(key=sort_f)
     while len(nodes) > 0:
         print("remaining: %d" % len(nodes))
         nodes.sort(key=sort_f)
@@ -64,17 +67,20 @@ with open(file_name, "r") as in_file:
         jdx = node.x
 
         #update left
-        update(weight, idx, jdx, idx - 1, jdx)
+        if update(weight, idx, jdx, idx - 1, jdx):
+            nodes.append(weight[idx - 1, jdx])
 
         #update down
-        update(weight, idx, jdx, idx, jdx + 1)
+        if update(weight, idx, jdx, idx, jdx + 1):
+            nodes.append(weight[idx, jdx + 1])
+
 
         #update right
-        update(weight, idx, jdx, idx + 1, jdx)
+        if update(weight, idx, jdx, idx + 1, jdx):
+            nodes.append(weight[idx + 1, jdx])
 
         #update up
-        update(weight, idx, jdx, idx, jdx - 1)
-            
+        if update(weight, idx, jdx, idx, jdx - 1):
+            nodes.append(weight[idx, jdx - 1])
 
     print(weight[-1 ,-1].path)
-    interact(local=locals())
