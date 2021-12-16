@@ -3,7 +3,7 @@
 import numpy as np
 import pyglet
 from pyglet import shapes
-
+from time import sleep
 from code import interact
 
 file_name = "input"; board_max = 2881; steps_per_frame = 100
@@ -74,7 +74,7 @@ H = d * weight.shape[1]
 
 p_max = path.max()
 
-window = pyglet.window.Window(W, H)
+window = pyglet.window.Window(W, H, style = 'borderless')
 @window.event
 def on_draw():
     window.clear()
@@ -87,8 +87,8 @@ rectangles = np.full(shape=weight.shape, fill_value=None)
 for idx in range(rectangles.shape[0]):
     for jdx in range(rectangles.shape[1]):
         r = 0
-        g = 0 
-        b = 90
+        g = 90 
+        b = 0
         rectangles[idx, jdx] = shapes.Rectangle(idx * d, jdx * d, d, d, color=(r, g, b), batch=batch)
 
 complete_once = False
@@ -128,8 +128,8 @@ def update(dt):
 
         if path[coord_] > board_max:
             r = 0
-            g = 0
-            b = 90
+            g = 90
+            b = 0
         
         else:
             r = 100
@@ -151,5 +151,9 @@ def update(dt):
     prev_shortest_path = shortest_path
 
 if __name__ == "__main__":
+    for idx in range(10, -1, -1):
+        print(idx)
+        sleep(1)
+
     pyglet.clock.schedule_interval(update, 10**-10)
     pyglet.app.run()
