@@ -6,8 +6,8 @@ from pyglet import shapes
 from time import sleep
 from code import interact
 
-file_name = "input"; board_max = 2881; steps_per_frame = 100
-#file_name = "test_data"; board_max = 315; steps_per_frame = 1
+file_name = "input"; board_max = 2881; steps_per_frame = 100; max_intensity = 2499
+#file_name = "test_data"; board_max = 315; steps_per_frame = 1; max_intensity = 2499
 
 def update_(weight, path, complete, prev, idx, jdx, idx_, jdx_):
     res = False
@@ -87,10 +87,14 @@ rectangles = np.full(shape=weight.shape, fill_value=None)
 for idx in range(rectangles.shape[0]):
     for jdx in range(rectangles.shape[1]):
         r = 0
-        g = 90 
+        g = 0 
         b = 0
         rectangles[idx, jdx] = shapes.Rectangle(idx * d, jdx * d, d, d, color=(r, g, b), batch=batch)
 
+def sigmoid(X):
+   return 1 - np.exp(-X / 0.2)
+
+intensity = np.zeros(shape=weight.shape, dtype=np.int64)
 complete_once = False
 prev_shortest_path = list()
 def update(dt):
@@ -102,12 +106,14 @@ def update(dt):
     global complete_once
     global prev_shortest_path 
     global steps_per_frame
+    global intensity
 
     coords_ = []
     coord = (-1, -1)
 #    print(len(nodes))
     for _ in range(steps_per_frame):
         if len(nodes) > 0:
+            print(intensity.max())
             nodes.sort(key=sort_f)
             coord = nodes.pop(0)[1]
         
@@ -128,32 +134,36 @@ def update(dt):
 
         if path[coord_] > board_max:
             r = 0
-            g = 90
+            g = 0
             b = 0
         
         else:
-            r = 100
-            g = int((path[coord_] * 255) // p_max)
-            b = 100
+            #g = (path[coord_] % 64) * 4
+            g = path[coord_] % 256
+            r = g//2
+            b = g
        
         rectangles[coord_].color = (r, g, b)
 
-    shortest_path = [(coord)]
-    while coord != (0, 0):
-        coord = tuple(prev[coord])
-        shortest_path.insert(0, coord)
+    if not complete[-1, -1]:
+        shortest_path = [(coord)]
+        while coord != (0, 0):
+            coord = tuple(prev[coord])
+            shortest_path.insert(0, coord)
+    
+        for coord in shortest_path:
+            r = 255
+            g = 255 
+            b = 255
+            rectangles[coord].color = (r, g, b)
+            intensity[coord] += 1
+        prev_shortest_path = shortest_path
 
-    for coord in shortest_path:
-        r = 0
-        g = 0 
-        b = 0
-        rectangles[coord].color = (r, g, b)
-    prev_shortest_path = shortest_path
 
 if __name__ == "__main__":
-#    for idx in range(10, -1, -1):
-#        print(idx)
-#        sleep(1)
+    for idx in range(-1, -1, -1):
+        print(idx)
+        sleep(1)
 
     pyglet.clock.schedule_interval(update, 10**-10)
     pyglet.app.run()
