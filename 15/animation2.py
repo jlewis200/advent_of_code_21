@@ -160,7 +160,7 @@ def update(dt):
 
 
 if __name__ == "__main__":
-    for idx in range(-1, -1, -1):
+    for idx in range(10, -1, -1):
         print(idx)
         sleep(1)
 
