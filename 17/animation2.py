@@ -176,7 +176,7 @@ def update(dt):
     global batch
     global target
     
-    if len(probes) < 1000 and len(tuples) > 0:
+    if len(probes) < 100:
         color=(255, 0, 0)
         coord = tuples.pop()
         rectangle = shapes.Rectangle(*transformer.transform(*coord), 20, 20, color=color, batch=batch)
@@ -199,9 +199,9 @@ def update(dt):
     
 
 if __name__ == "__main__":
-    for idx in range(10, -1, -1):
-        print(idx)
-        sleep(1)
+#    for idx in range(10, -1, -1):
+#        print(idx)
+#        sleep(1)
 
     pyglet.clock.schedule_interval(update, 1/120.0)
     pyglet.app.run()
