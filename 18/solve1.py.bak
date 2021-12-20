@@ -1,0 +1,84 @@
+#!/usr/bin/python3
+
+import numpy as np
+from code import interact
+
+file_name = "input"
+file_name = "test_data"
+file_name = "test_data2"
+
+
+def find_delim(line, idx):
+
+    while idx < len(line) and line[idx] != ']' and line[idx] != ',':
+        idx += 1
+
+    return idx
+
+
+class Number:
+
+    idx = 0
+    array = list()
+
+    def __init__(self, line, idx=0, parent=None, depth=0):
+        self.parent = parent
+        self.left = None
+        self.right = None
+        self.value = None
+
+        if line[idx] == '[':
+            self.left = Number(line, idx + 1, parent=self, depth=depth + 1)
+            self.right = Number(line, Number.idx, parent=self, depth=depth + 1)
+
+        else:
+            Number.idx = find_delim(line, idx)
+            self.value = int(line[idx:Number.idx])
+            Number.array.append(self)
+
+        Number.idx += 1
+
+    def explode_left(self, value):
+        if self.parent is not None and \
+           self.parent.left is not None and \
+           self.parent.left.value is not None:
+            self.parent.left.value += value
+
+        elif self.parent is not None:
+            self.parent.explode_left(value)
+
+    def explode_right(self, value):
+        if self.parent is not None and \
+           self.parent.right is not None and \
+           self.parent.right.value is not None:
+            self.parent.right.value += value
+
+        elif self.parent is not None:
+            self.parent.explode_right(value)
+
+    def reduce(self, depth):
+        if depth == 4 and \
+           self.left.value is not None and \
+           self.right.value is not None:
+            explode_left(self.left.value)
+            explode_right(self.right.value)
+            self.left = None
+            self.right = None
+            self.value = 0
+
+
+            
+
+with open(file_name, "rt") as in_file:
+    
+    numbers = list()
+    for line in in_file:
+        n_numbers = line.count(',') + 1
+        numbers.append(Number(line))
+
+    for number in numbers:
+        number.reduce()
+
+
+
+    interact(local=locals())
