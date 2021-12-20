@@ -6,7 +6,7 @@ from code import interact
 
 file_name = "input"
 file_name = "test_data"
-file_name = "test_data2"
+#file_name = "test_data2"
 
 
 def find_delim(line, idx):
@@ -20,24 +20,24 @@ def find_delim(line, idx):
 class Number:
 
     idx = 0
-    prev = None
-    forward = None
 
-    def __init__(self, line, idx=0, parent=None, depth=0):
-        self.parent = parent
+    def __init__(self, line, idx=0, parent=None):
         self.left = None
         self.right = None
         self.value = None
+        self.depth = 0
+        self.parent = parent
 
-        if line[idx] == '[':
-            self.left = Number(line, idx + 1, parent=self, depth=depth + 1)
-            self.right = Number(line, Number.idx, parent=self, depth=depth + 1)
-
-        else:
-            Number.idx = find_delim(line, idx)
-            self.value = int(line[idx:Number.idx])
-
-        Number.idx += 1
+        if idx < len(line):
+            if line[idx] == '[':
+                self.left = Number(line, idx + 1, self)
+                self.right = Number(line, Number.idx, self)
+    
+            else:
+                Number.idx = find_delim(line, idx)
+                self.value = int(line[idx:Number.idx])
+    
+            Number.idx += 1
 
     def print(self):
         if self.value is None:
@@ -50,94 +50,84 @@ class Number:
         else:
             print(self.value, end='')
 
-    def explode_left(self, value):
-#        if self.parent is not None and \
-#           self.parent.left is not None and \
-#           self.parent.left.value is not None:
-#            self.parent.left.value += value
-#
-#        elif self.parent is not None:
-#            self.parent.explode_left(value)
-
-        if len(path) > 1:
-            path[-2].value += value
-        
-    def explode_right(self, value):
-        if self.left is not None and \
-           self.left.value is not None:
-            self.parent.right.value += value
-
-        elif self.parent is not None:
-            self.parent.explode_right(value)
-
-    def split():
-        self.left = Number("%d" % floor(self.value / 2))
-        self.right = Number("%d" % ceil(self.value / 2))
-        self.value = None
-
-    def reduce(self, depth):
-        """
-        prev := previous node with non-None value
-        forward := value to pass forward to the next non-None value
-        """
-
-        if Number.forward is not None and \
-           self.value is not None:
-            self.value += Number.forward
-            Number.forward = None
-            #return?
-
-        if depth == 4 and \
-           self.left is not None and \
-           self.right is not None and \
-           self.left.value is not None and \
-           self.right.value is not None:
-
-            if Number.prev is not None:
-               Number.prev.value += self.left.value
-
-            Number.forward = self.right.value
-
-            self.left = None
-            self.right = None
-            self.value = 0
-            #return here?
+    def to_list(self, ret_list=None):
+        if ret_list is None:
+            ret_list = list()
 
         if self.value is not None:
-            Number.prev = self
-
-
-        if self.value is not None and \
-           self.value >= 10:
-            self.split()
-            #return here?
+            ret_list.append(self)
+            print(self.value)
 
         if self.left is not None:
-            self.left.reduce(depth + 1)
+            self.left.to_list(ret_list)
 
         if self.right is not None:
-            self.right.reduce(depth + 1)
+            self.right.to_list(ret_list)
+
+        return ret_list
+
+    def update_depth(self, depth=0):
+
+        self.depth = depth
+
+        if self.left is not None:
+            self.left.update_depth(depth + 1)
+
+        if self.right is not None:
+            self.right.update_depth(depth + 1)
 
 
-            
+def print_line(line):
+    depth = 0
+    for char in line:
+        if char == '[':
+            depth += 1
+            print()
+            print(depth, end=' ')
+        elif char == ']':
+            depth -= 1
+            print()
+            print(depth, end=' ')
+        elif char == ',':
+            print(',', end='')
+        else:
+            print(char, end='')
+
+def explode(nlist, idx):
+    if idx > 0:
+        nlist[idx - 1].value += nlist[idx].value
+        if nlist[idx - 1] >= 10:
+            split(nlist, idx - 1)
+
+    if idx < len(nlist) - 1:
+        nlist[idx + 1].value += nlist[idx].value
+        if nlist[idx + 1] >= 10:
+            split(nlist, idx + 1)
+
 
 with open(file_name, "rt") as in_file:
     
     numbers = list()
     for line in in_file:
-        n_numbers = line.count(',') + 1
+        Number.idx = 0
         numbers.append(Number(line))
+        print_line(line)
 
-    for number in numbers:
-        number.print() 
-        print(" "*8, end='')
-        Number.prev = None
-        Number.forward = None
-        number.reduce(0)
-        number.print()
-        print()
+    n1 = numbers.pop(0)
+    n2 = numbers.pop(0)
+    tmp = Number("")
+    tmp.left = n1
+    tmp.right = n2
+    n1 = tmp
+    
+    nlist = n1.to_list()
+    nlist.update_depth()
 
+    for idx in range(len(nlist)):
+        if nlist[idx].depth == 4:
+            explode(nlist, idx)
 
-    print()
+        if nlist[idx].value >= 10:
+            nlist[idx]
     print()
     interact(local=locals())
