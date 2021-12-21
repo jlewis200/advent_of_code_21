@@ -1,0 +1,198 @@
+#!/usr/bin/python3
+
+import numpy as np
+from math import floor, ceil
+from code import interact
+
+file_name = "input"
+file_name = "test_data"
+
+
+def find_delim(line, idx):
+
+    while idx < len(line) and line[idx] != ']' and line[idx] != ',':
+        idx += 1
+
+    return idx
+
+
+class Number:
+
+    idx = 0
+    modified = False
+    prev_node = None
+    fwd_value = None
+
+    def __init__(self, line, idx=0):
+        print(len(line))
+        self.left = None
+        self.right = None
+        self.value = None
+
+        if idx < len(line):
+            if line[idx] == '[':
+                self.left = Number(line, idx + 1)
+                self.right = Number(line, Number.idx)
+    
+            else:
+                Number.idx = find_delim(line, idx)
+                print(idx)
+                print(Number.idx)
+                print()
+                self.value = int(line[idx:Number.idx])
+    
+            Number.idx += 1
+
+    def print(self):
+        if self.value is None:
+            print('[', end='')
+            self.left.print()
+            print(',', end='')
+            self.right.print()
+            print(']', end='')
+
+        else:
+            print(self.value, end='')
+
+    def split(self):
+                
+        if self.value is not None and \
+           self.value >= 10:
+            self.left = Number("%d" % floor(self.value / 2))
+            self.right = Number("%d" % ceil(self.value / 2))
+            self.value = None
+            Number.modified = True
+            return
+
+        else:
+            if self.left is not None:
+                self.left.split()
+
+            if self.right is not None:
+                self.right.split()
+            
+    def explode(self, depth):
+        """
+        prev_node := previous node with non-None value
+        fwd_value := value to pass forward to the next non-None value
+        """
+
+        if Number.fwd_value is not None and \
+           self.value is not None:
+            self.value += Number.fwd_value
+            Number.fwd_value = None
+            return
+
+        #explode criteria
+        if depth == 4 and \
+           self.left is not None and \
+           self.right is not None and \
+           self.left.value is not None and \
+           self.right.value is not None and \
+           not Number.modified:
+
+            Number.modified = True
+            
+            #explode leftward
+            if Number.prev_node is not None:
+               Number.prev_node.value += self.left.value
+
+            #set forward value for rightward explosion
+            Number.fwd_value = self.right.value
+
+            self.left = None
+            self.right = None
+            self.value = 0
+            #return
+
+        #set prev_nodeious number for possible future use in leftward explosion
+        if self.value is not None:
+            Number.prev_node = self
+
+        if self.value is not None and \
+           self.value >= 10 and \
+           not Number.modified:
+            self.left = Number("%d" % floor(self.value / 2))
+            self.right = Number("%d" % ceil(self.value / 2))
+            self.value = None
+            Number.modified = True
+            return
+
+        if self.left is not None:
+            self.left.explode(depth + 1)
+
+        if self.right is not None:
+            self.right.explode(depth + 1)
+
+    def reduce(self):
+        Number.modified = True
+
+        while Number.modified:
+            Number.modified = False
+            Number.prev_node = None
+            Number.fwd_value = None
+            self.explode(0)
+            #if Number.modified:
+            #    continue
+            #self.split()
+
+def print_line(line):
+    depth = 0
+    for char in line:
+        if char == '[':
+            depth += 1
+            print()
+            print(depth, end=' ')
+        elif char == ']':
+            depth -= 1
+            print()
+            print(depth, end=' ')
+        elif char == ',':
+            print(',', end='')
+        else:
+            print(char, end='')
+
+with open(file_name, "rt") as in_file:
+    
+    numbers = list()
+    for line in in_file:
+        line = line.strip()
+        n_numbers = line.count(',') + 1
+        numbers.append(Number(line))
+        print_line(line)
+
+    #reduce all prior to addition
+    for number in numbers:
+        number.print() 
+        print(" "*8, end='')
+        number.reduce()
+        number.print()
+        print()
+
+    #add numbers
+    n1 = numbers.pop(0)
+
+    while len(numbers) > 0:
+        n2 = numbers.pop(0)
+
+        print('*' * 80)
+        n1.print()
+        print()
+        n2.print()
+        print()
+        print()
+
+        tmp = Number("")
+        tmp.left = n1
+        tmp.right = n2
+        n1 = tmp
+        n1.print()
+        print()       
+
+        n1.reduce()
+        n1.print()
+        print()
+
+    print()
+    print()
+#    interact(local=locals())

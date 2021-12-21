@@ -4,7 +4,7 @@ import numpy as np
 from itertools import product
 from code import interact
 
-rounds = 2
+rounds = 50
 
 def get_input():
     global rounds
@@ -57,7 +57,7 @@ def print_img(img):
 in_img, key = get_input()
 out_img = np.zeros(shape=in_img.shape, dtype=np.int8)
 
-for _ in range(rounds):
+for round in range(rounds):
 
     out_img[out_img ==1] -= 1
 
@@ -67,8 +67,9 @@ for _ in range(rounds):
 
     in_img = out_img.copy() 
     in_img = in_img[1:-2, 1:-2]
-    print_img(out_img)
-    print()
+    print(round)
 
+print_img(out_img)
+out_img = out_img[:-70, :-70]
 print(out_img[out_img > 0].shape)
 interact(local=locals())
