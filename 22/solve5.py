@@ -5,7 +5,7 @@ from code import interact
 
 def get_data():
     file_name = "input"
-    file_name = "test_data"
+    file_name = "test_data3"
     
     with open(file_name, "r") as in_file:
         actions = list()
@@ -37,58 +37,57 @@ def get_data():
 
         return actions
 
-
-def add_interval(intervals, action, x0, x1):
-
-    for interval in intervals:
-
-        if action == 0:
-
-            if x0 >= interval[0] and x0 <= interval[1]:
-                right = interval[1]
-                interval[1] = x0 - 1
-                if right >= x1 + 1:
-                    intervals.append([x1 + 1, right])
- 
-            if x1 >= interval[0] and x0 <= interval[1]:
-                left = interval[0]
-                interval[0] = x1 + 1
-                if x0 - 1 >= left:
-                    intervals.append([left, x0 - 1])
-            
-            if interval[0] >= x0 and interval[0] <= x1:
-                interval[0] = x1 + 1
-
-            if interval[1] >= x0 and interval[1] <= x1:
-                interval[1] = x0 - 1
-
-        elif action == 1:
-
-            if  (x0 >= interval[0] and x0 <= interval[1]) or \
-                (interval[1] >= x0 and interval[1] <= x1):
-                
-                x1 = max(x1, interval[1])
-                interval[1] = x0 - 1
-
-            if  (x1 >= interval[0] and x1 <= interval[1]) or \
-                (interval[0] >= x0 and interval[0] <= x1):
-
-                x0 = min(x0, interval[0])
-                interval[0] = x1 + 1
-
-    if action == 1:
-
-        intervals.append([x0, x1])
-
 def sum_intervals(intervals):
 
     sum = 0
     
     for interval in intervals:
-        tmp = (interval[1] - interval[0]) + 1
+        tmp = interval[1] - interval[0]
         sum += tmp if tmp > 0 else 0
 
     return sum
+
+def add_interval(inters, action, x0, x1):
+
+    x1 = x1 + 1
+    new_inter = [x0, x1]
+    new_inters = [new_inter]
+    
+    split_intervals(inters, new_inter)
+
+    for inter in inters:
+        split_intervals(new_inters, inter)
+
+    if action == 0:
+        for new_inter in new_inters:
+            if new_inter in inters:
+                inters.remove(new_inter)
+
+    elif action == 1:
+        for new_inter in new_inters:
+            if new_inter not in inters:
+                inters.append(new_inter)
+
+def split_intervals(inters, split_inter):
+    idx = 0
+
+    x0 = split_inter[0]
+    x1 = split_inter[1]
+
+    while idx < len(inters):
+        inter = inters[idx]
+
+        if x0 > inter[0] and x0 < inter[1]: 
+            inters.append([x0, inter[1]])
+            inter[1] = x0
+
+        if x1 > inter[0] and x1 < inter[1]:
+            inters.append([x1, inter[1]])
+            inter[1] = x1
+        
+        idx += 1
+
+
 
 actions = get_data()
 
@@ -103,8 +102,8 @@ sum = 0
 for z in range(z_max + 1):
     print("%d / %d" %(z, z_max))
     for y in range(y_max + 1):
-#        y = 35
-#        z = 84
+#        y = 56
+#        z = 94
         
         intervals = []
         
@@ -126,7 +125,7 @@ for z in range(z_max + 1):
         sum += line_sum
 
 #        print(sum)
-#        exit()
+#exit()
 
 print(sum)
 
