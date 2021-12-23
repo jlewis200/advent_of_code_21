@@ -5,7 +5,7 @@ from code import interact
 
 def get_data():
     file_name = "input"
-    file_name = "test_data"
+    file_name = "test_data2"
     
     with open(file_name, "r") as in_file:
         actions = list()
