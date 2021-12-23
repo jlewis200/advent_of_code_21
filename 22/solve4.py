@@ -5,7 +5,7 @@ from code import interact
 
 def get_data():
     file_name = "input"
-    file_name = "test_data"
+    file_name = "test_data2"
     
     with open(file_name, "r") as in_file:
         actions = list()
@@ -41,48 +41,42 @@ def get_data():
 def add_interval(intervals, action, x0, x1):
 
     if action == 0:
-        for idx in range(len(intervals) - 1, -1, -1):
 
-            if x0 in range(intervals[idx][0], intervals[idx][1] + 1):
+        for idx in range(len(intervals)):
+
+            if x0 >= intervals[idx][0] and x0 <= intervals[idx][1]:
                 right = intervals[idx][1]
                 intervals[idx][1] = x0 - 1
                 if right >= x1 + 1:
                     intervals.append([x1 + 1, right])
  
-            if x1 in range(intervals[idx][0], intervals[idx][1] + 1):
+            if x1 >= intervals[idx][0] and x0 <= intervals[idx][1]:
                 left = intervals[idx][0]
                 intervals[idx][0] = x1 + 1
                 if x0 - 1 >= left:
-                    intervals.append( [left, x0 - 1])
+                    intervals.append([left, x0 - 1])
             
-            if intervals[idx][0] in range(x0, x1 + 1):
+            if intervals[idx][0] >= x0 and intervals[idx][0] <= x1:
                 intervals[idx][0] = x1 + 1
 
-            if intervals[idx][1] in range(x0, x1 + 1):
+            if intervals[idx][1] >= x0 and intervals[idx][1] <= x1:
                 intervals[idx][1] = x0 - 1
 
-            if intervals[idx][0] > intervals[idx][1]:
-                intervals.pop(idx)
-    
     elif action == 1:
 
-        for idx in range(len(intervals) - 1, -1, -1):
+        for idx in range(len(intervals)):
 
-            if  x0 in range(intervals[idx][0], intervals[idx][1] + 1) or \
-                intervals[idx][1] in range(x0, x1 + 1):
+            if  (x0 >= intervals[idx][0] and x0 <= intervals[idx][1]) or \
+                (intervals[idx][1] >= x0 and intervals[idx][1] <= x1):
                 
                 x1 = max(x1, intervals[idx][1])
                 intervals[idx][1] = x0 - 1
 
-            if  x1 in range(intervals[idx][0], intervals[idx][1] + 1) or \
-                intervals[idx][0] in range(x0, x1 + 1):
+            if  (x1 >= intervals[idx][0] and x1 <= intervals[idx][1]) or \
+                (intervals[idx][0] >= x0 and intervals[idx][0] <= x1):
 
                 x0 = min(x0, intervals[idx][0])
                 intervals[idx][0] = x1 + 1
-
-            if  intervals[idx][0] > intervals[idx][1]:
-
-                intervals.pop(idx)
 
         intervals.append([x0, x1])
 
@@ -91,12 +85,9 @@ def sum_intervals(intervals):
     sum = 0
     
     for interval in intervals:
-        sum += (interval[1] - interval[0]) + 1
+        tmp = (interval[1] - interval[0]) + 1
+        sum += tmp if tmp > 0 else 0
 
-    if len(intervals) > 0 and sum < 1:
-        print("sum error")
-        print(intervals)
-        exit()
     return sum
 
 actions = get_data()

@@ -5,7 +5,7 @@ from code import interact
 
 def get_data():
     file_name = "input"
-    file_name = "test_data2"
+    file_name = "test_data"
     
     with open(file_name, "r") as in_file:
         actions = list()
@@ -48,7 +48,7 @@ z_max = actions[:, 5:7].max() + 1
 sum = 0
 
 for z in range(z_max + 1):
-#    print("%d / %d" %(z, z_max))
+    print("%d / %d" %(z, z_max))
     for y in range(y_max + 1):
         line = np.zeros(shape=(x_max,), dtype=np.int8)
 
@@ -63,7 +63,7 @@ for z in range(z_max + 1):
                 line[action[1] : action[2] + 1] = action[0]                               
      
         line_sum =  line[line > 0].shape[0]
-        print("%d %d %d" % (y, z, line_sum))        
+#        print("%d %d %d" % (y, z, line_sum))        
         sum += line[line > 0].shape[0]
 
 print(sum)
