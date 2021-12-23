@@ -5,7 +5,7 @@ from code import interact
 
 def get_data():
     file_name = "input"
-    file_name = "test_data3"
+    file_name = "test_data2"
     
     with open(file_name, "r") as in_file:
         actions = list()
@@ -70,8 +70,10 @@ def add_interval(inters, action, x0, x1, y0, y1, z0, z1):
 
     if action == 0:
         for new_inter in new_inters:
-            if new_inter in inters:
+            try:
                 inters.remove(new_inter)
+            except:
+                pass
 
     elif action == 1:
         for new_inter in new_inters:
@@ -113,14 +115,18 @@ def split_intervals(inters, split_inter):
  
         #depth split
         if z0 > inter[4] and z0 < inter[5]: 
-            inters.append([inter[0], inter[1], inter[2], inter[3], z0, inter[3]])
+            inters.append([inter[0], inter[1], inter[2], inter[3], z0, inter[5]])
             inter[5] = z0
 
         #depth split
         if z1 > inter[4] and z1 < inter[5]: 
             inters.append([inter[0], inter[1], inter[2], inter[3], z1, inter[5]])
             inter[5] = z1
-        
+
+#        if inter[0] >= inter[1] or inter[2] >= inter[3] or inter[4] >= inter[5]:
+#            inters.pop(idx)
+#            idx -= 1
+
         idx += 1
 
 actions = get_data()
