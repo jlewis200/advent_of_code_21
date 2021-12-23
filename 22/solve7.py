@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
 import numpy as np
+from multiprocessing import Pool
+from os import cpu_count
 from code import interact
 
 def get_data():
@@ -109,23 +111,7 @@ def split_intervals(inters, split_inter):
         
         idx += 1
 
-
-
-actions = get_data()
-
-grid = np.full(shape=(101, 101, 101), fill_value=False)
-
-x_max = actions[:, 1:3].max() + 1
-y_max = actions[:, 3:5].max() + 1
-z_max = actions[:, 5:7].max() + 1
-
-sum = 0
-
-for z in range(z_max + 1):
-    print("%d / %d" %(z, z_max))
-#    y = 56
-#    z = 94
-    
+def get_line_sum(z):
     intervals = []
     
     for action in actions:
@@ -133,18 +119,23 @@ for z in range(z_max + 1):
         if z >= action[5] and z <= action[6]:
             add_interval(intervals, *action[0:5])
 
-#            print("%3d %3d %3d %3d %3d " % tuple(action[0:5]), end='')
-#            print("%5d " % sum_intervals(intervals), end=' ')
-#            print(intervals)
+    return sum_intervals(intervals)
 
-    line_sum = sum_intervals(intervals)
-#    print("%d %d" % (z, line_sum))        
 
-    sum += line_sum
+actions = get_data()
+z_max = actions[:, 5:7].max() + 1
 
-#        print(sum)
-#exit()
+with Pool(max(2, cpu_count() - 2)) as pool:
+    line_sums = pool.map(get_line_sum, range(z_max))
+    print(sum(line_sums))
 
-print(sum)
+
+#sum = 0
+#
+#for z in range(z_max):
+#    print("%d / %d" %(z, z_max))
+#    sum += get_line_sum(z)
+#
+#print(sum)
 
 #interact(local=locals())
