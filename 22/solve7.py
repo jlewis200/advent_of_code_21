@@ -112,6 +112,7 @@ def split_intervals(inters, split_inter):
         idx += 1
 
 def get_line_sum(z):
+    print(z)
     intervals = []
     
     for action in actions:
