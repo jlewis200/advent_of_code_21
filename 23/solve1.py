@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import numpy as np
+from copy import deepcopy
 from code import interact
 
 def get_data():
@@ -94,15 +95,17 @@ class Node:
 
         if self.val in ['A', 'B', 'C', 'D']:
             Node.root.clear()
+            self.visited = True
             self.get_paths(paths, partial)
 
         return paths
 
     def get_paths(self, paths, partial):
-        self.visited = True
 
-        if self.val != '_' and len(partial) > 0: #maybe remove len check to automatically consider doing nothing?  Probably not...
-            paths.append(partial)
+        if self.val != '_' and not self.visited: 
+            paths.append((self, len(partial)))
+        
+        self.visited = True
 
         if  self.l is not None and \
             self.l.val in ['.', '_'] and \
@@ -154,6 +157,32 @@ class Node:
 
         return pieces 
 
+    def get_terminals(self, terminals=None):
+
+        if terminals is None:
+            terminals = dict()
+
+        node = self
+
+        terminal_char = 'A'
+
+        while node is not None:
+            if node.val in ['A', 'B', 'C', 'D']:
+            
+                if terminal_char not in terminals.keys():
+                    terminals[terminal_char] = list()
+
+                terminals[terminal_char].append(node)
+
+                terminal_char = chr(ord(terminal_char) + 1)
+
+            node = node.r
+
+        if self.d is not None:
+            self.d.get_terminals(terminals)
+
+        return terminals 
+
 def setup_nodes(board):
     root = Node("root")
     row = root
@@ -179,11 +208,80 @@ def setup_nodes(board):
 
     return root
 
+def is_complete(terminals):
+    complete = True
+
+    for char in ['A', 'B', 'C', 'D']:
+        for idx in range(2):
+            complete = complete and terminals[char][idx] == char
+
+    return complete
+
+
+def solve(pieces, terminals, move_counts, energies, energy):
+
+    indent = 0
+    for char in ['A', 'B', 'C', 'D']:
+        for idx in range(2):
+            indent += move_counts[char][idx]
+     
+    node_str = str(Node.root.d)
+    for line in node_str.split('\n'):
+         print("    " * indent, end='')
+         print(line)
+#    print_dict(move_counts)
+
+    if is_complete(terminals):
+        print("completed one")
+        exit()
+        energies.append(energy)
+        return
+
+    for char in ['A', 'B', 'C', 'D']:
+        for idx in range(2):
+            if move_counts[char][idx] < 2:
+                
+                original_position = pieces[char][idx]
+                
+                dests = pieces[char][idx].get_dests()         
+                pieces[char][idx].val = '.'
+
+                #if a terminal is in the dest list and the terminal is homogeneous    
+                if terminals[char][0] in ['.', char] and \
+                   terminals[char][1] in ['.', char]:
+
+                    for dest_tuple in dests:
+                        if dest_tuple[0] == terminals[char][1]:
+                            dests = [dest_tuple]
+                            break
+                        
+                        if dest_tuple[0] == terminals[char][0]:
+                            dests = [dest_tuple]
+                            break
+
+                #remove dests which are incorrect terminals for the char
+
+
+                if len(dests) > 0:
+                    move_counts[char][idx] += 1
+                    for dest, cost in dests:
+                        dest.val = char
+                        pieces[char][idx] = dest
+                        solve(pieces, terminals, deepcopy(move_counts), energies, energy + cost*(10**0x41-ord(char)))
+                        dest.val = '.'
+                    move_counts[char][idx] -= 1
+
+                pieces[char][idx] = original_position
+                pieces[char][idx].val = char
+
 board = get_data()
+root = setup_nodes(board)
 
 min_energy = 999999999
 pieces = root.get_pieces()
+terminals = root.get_terminals()
 print_dict(pieces)
+print_dict(terminals)
 
 move_counts = dict()
 move_counts['A'] = [0, 0]
@@ -191,25 +289,9 @@ move_counts['B'] = [0, 0]
 move_counts['C'] = [0, 0]
 move_counts['D'] = [0, 0]
 
-def solve(root, min_energy):
+energies = list()
 
-    for char in ['A', 'B', 'C', 'D']:
-        for idx in range(2):
-            if move_counts[char][idx] < 2:
-                    
-                energy = 0
-
-                root = setup_nodes(board)
-                dests = pieces[p1][p1_idx].get_dests()
-
-
-
-
-                
-
-
-#print(board)
-#print()
-#print(root)
-
-interact(local=locals())
+solve(pieces, terminals, move_counts, energies, 0)
+print(energies)
+#print(min(energies))
+#interact(local=locals())
