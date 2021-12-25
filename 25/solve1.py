@@ -3,98 +3,128 @@
 import numpy as np
 from code import interact
 
-def get_data():
-    filename = "input"
-#    filename = "test_data"
+MAX_ITR = 1000
+
+def get_data(filename):
+    """
+    Get grid layout from file.
+
+    Returns a numpy ndarray with the following character mapping:
+        '.' -> 0
+        '>' -> 1
+        'v' -> 2
+    """
 
     lines = list()
 
     with open(filename, "r") as in_file:
 
         for line in in_file:
+            #map characters to (character) numbers
             line = line.replace(".", "0")
             line = line.replace(">", "1")
             line = line.replace("v", "2")
 
+            #split rows into a list single characters, append to lines
             lines.append(list(line.strip()))
 
+    #return the list of lists as a 2-d ndarray
     return np.asarray(lines, dtype=np.int8)
 
 def print_grid(grid):
+    """
+    Print a grid, substituting the numerical values in the ndarray with their
+    character equivalents.
+    """
+
     char_map = dict()
     char_map[0] = "."
     char_map[1] = ">"
     char_map[2] = "v"
 
     for idx in range(grid.shape[0]):
+
         for jdx in range(grid.shape[1]):
+
             print(char_map[grid[idx, jdx]], end='')
+
         print()
+
     print()
 
-grid = get_data()
-print_grid(grid)
+def solve(filename="input", debug=False):
+    """
+    The main solving logic.
+    """
 
-for itr in range(1, 50000):
-    print("itr:  %d" % itr)
+    grid = get_data(filename)
+    print_grid(grid)
+
+    itr = 1
+    modified = True
+
+    while modified and itr < MAX_ITR:
+        modified = False
+        print("iteration:  %d" % itr)
+        
+        #east-to-west herd logic 
+
+        #position changes are made to a copy of the grid
+        #this simplifies the logic and avoids moveing a cucumber more than once per pass
+        tmp = grid.copy()
+
+        #for each row
+        for idx in range(grid.shape[0]):
+            
+            #for each column
+            for jdx in range(grid.shape[1]):
+
+                #calc the possibly wrapped position to the right of [idx, jdx]
+                jdx_ = (jdx + 1) % grid.shape[1]
     
-    moved = False
-    tmp = grid.copy()
+                #if position holds a E-W element and right position is open
+                if grid[idx, jdx] == 1 and grid[idx, jdx_] == 0:
 
-    for idx in range(grid.shape[0]):
-     
-        jdx = 0
-        while jdx < grid.shape[1] and grid[idx, jdx] != 0:
-            jdx += 1
+                    #move element right
+                    tmp[idx, jdx] = 0
+                    tmp[idx, jdx_] = 1
+                    modified = True
+       
+        if debug:
+            print_grid(tmp)
+
+        #north-to-south herd logic 
         
-        end = jdx
-        if end == grid.shape[1]:
-            continue
+        #copy updated temp grid to "grid"
+        grid = tmp.copy()
 
-        jdx += 1
-        jdx %= grid.shape[1]
+        #for each row
+        for idx in range(grid.shape[0]):    
 
-        while jdx != end:
-            if grid[idx, jdx] == 1 and \
-               grid[idx, (jdx + 1) % grid.shape[1]] == 0:
-                tmp[idx, jdx] = 0
-                tmp[idx, (jdx + 1) % grid.shape[1]] = 1
-                moved = True
- 
-            jdx += 1
-            jdx %= grid.shape[1]
+            #for each column
+            for jdx in range(grid.shape[1]):
+           
+                #calc possibly wrapped lower index
+                idx_ = (idx + 1) % grid.shape[0]
 
-    grid = tmp.copy()
-#    print_grid(grid)
-    for jdx in range(grid.shape[1]):
-        
-        idx = 0
-        while idx < grid.shape[0] and grid[idx, jdx] != 0:
-            idx += 1
-        
-        end = idx
-        if end == grid.shape[0]:
-            continue
+                #if position holds a N-S element and lower position is open
+                if grid[idx, jdx] == 2 and grid[idx_, jdx] == 0:
 
-        idx += 1
-        idx %= grid.shape[0]
+                    #move element down
+                    tmp[idx, jdx] = 0
+                    tmp[idx_, jdx] = 2
+                    modified = True
 
-        while idx != end:
-            if grid[idx, jdx] == 2 and \
-               grid[(idx + 1) % grid.shape[0], jdx] == 0:
-                tmp[idx, jdx] = 0
-                tmp[(idx + 1) % grid.shape[0], jdx] = 2
-                moved = True
+        if debug:
+            print_grid(tmp)
 
-            idx += 1
-            idx %= grid.shape[0]
+        #update grid and iteration counter
+        grid = tmp
+        itr += 1
 
-    grid = tmp
-#    print_grid(grid)
+    #print final grid layout 
+    print_grid(grid)
 
-    if not moved:
-        break
-
-
-#interact(local=locals())
-
+if __name__ == "__main__":
+    #solve("test_data", True)
+    solve("input", False)
