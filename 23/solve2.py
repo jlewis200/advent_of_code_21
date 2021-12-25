@@ -6,8 +6,8 @@ from copy import deepcopy
 from code import interact
 
 def get_data():
-    file_name = "input"
-#    file_name = "test_data"
+    file_name = "input2"
+#    file_name = "test_data2"
     
     with open(file_name, "r") as in_file:
         board = list()
@@ -112,16 +112,25 @@ class Node:
 
         #if terminal, and val is correct, and lower val is wall or correct
         if self.terminal is not None and \
-           val == self.terminal and \
-           self.d.val in [self.terminal, '#']:
+           val == self.terminal:
 
-            #print("terminal logic")
-            #interact(local=locals())
-#            pdb.set_trace()
-            paths.clear()
+            #traverse to bottom of bucket
+            #check if all are either wall or correct
+            homogeneous = True
+            tmp_node = self.d
+            while tmp_node.terminal is not None:
+                homogeneous = homogeneous and tmp_node.val in [tmp_node.terminal, '#']
+                tmp_node = tmp_node.d
 
-            paths.append((self, len(partial)))
-            return True
+            if homogeneous:
+
+                #print("terminal logic")
+                #interact(local=locals())
+    #            pdb.set_trace()
+                paths.clear()
+
+                paths.append((self, len(partial)))
+                return True
 
         #add if not no-rest, and not visited, and not terminal
         if self.val != '_' and not self.visited and self.terminal is None: 
@@ -243,27 +252,27 @@ def is_complete(terminals):
     complete = True
 
     for char in ['A', 'B', 'C', 'D']:
-        for idx in range(2):
+        for idx in range(4):
             complete = complete and terminals[char][idx].val == char
 
     return complete
-
-min_energy = 13068
 
 def solve(pieces, terminals, move_counts, energies, energy):
     global min_energy
 
     if energy >= min_energy:
         return
-#    indent = 0
-#    for char in ['A', 'B', 'C', 'D']:
-#        for idx in range(2):
-#            indent += move_counts[char][idx]
-#     
-#    node_str = str(Node.root.d)
-#    for line in node_str.split('\n'):
-#         print("    " * indent, end='')
-#         print(line)
+
+    if False:
+        indent = 0
+        for char in ['A', 'B', 'C', 'D']:
+            for idx in range(4):
+                indent += move_counts[char][idx]
+         
+        node_str = str(Node.root.d)
+        for line in node_str.split('\n'):
+             print("    " * indent, end='')
+             print(line)
 #    print_dict(move_counts)
 
     if is_complete(terminals):
@@ -276,7 +285,7 @@ def solve(pieces, terminals, move_counts, energies, energy):
 
     #for char in ['A', 'B', 'C', 'D']:
     for char in ['D', 'C', 'B', 'A']:
-        for idx in range(2):
+        for idx in range(4):
             if move_counts[char][idx] < 2:
                 
                 original_position = pieces[char][idx]
@@ -304,29 +313,44 @@ def solve(pieces, terminals, move_counts, energies, energy):
 board = get_data()
 root = setup_nodes(board)
 
-min_energy = 999999999
+min_energy = 47330
 pieces = root.get_pieces()
 terminals = root.get_terminals()
 print_dict(pieces)
 print_dict(terminals)
 
 move_counts = dict()
-move_counts['A'] = [0, 0]
-move_counts['B'] = [0, 0]
-move_counts['C'] = [0, 0]
-move_counts['D'] = [0, 0]
+move_counts['A'] = [0, 0, 0, 0]
+move_counts['B'] = [0, 0, 0, 0]
+move_counts['C'] = [0, 0, 0, 0]
+move_counts['D'] = [0, 0, 0, 0]
+
+#############
+#.C_C_B_._..#
+###B#.#.#D###
+###D#.#B#A###
+###D#B#A#C###
+###A#D#C#A###
+#############
+
+
+#pieces['C'][0].val = '.'
+#pieces['C'][0] = root.d.d.r.r
+#pieces['C'][0].val = 'C'
+#
+#pieces['C'][1].val = '.'
+#pieces['C'][1] = root.d.d.r.r.r.r
+#pieces['C'][1].val = 'C'
+#
+#pieces['B'][1].val = '.'
+#pieces['B'][1] = root.d.d.r.r.r.r.r.r
+#pieces['B'][1].val = 'B'
+#node = pieces['B'][1]
 
 energies = list()
+print(root)
 
-#root.d.d.r.r.r.r.r.r.r.r.r.r.val = 'D'
-#root.d.d.r.r.r.r.r.r.r.r.r.d.val = '.'
-#pieces['D'][0] = root.d.d.r.r.r.r.r.r.r.r.r.r
-#print(root)
-#dests = root.d.d.r.r.r.r.r.r.r.r.r.r.get_dests()
-#print(dests)
-
-
-#interact(local=locals())
+interact(local=locals())
 solve(pieces, terminals, move_counts, energies, 0)
 print(energies)
 #print(min(energies))
