@@ -139,25 +139,6 @@ def solve(filename="input"):
     print("max model number:  %d" % max(numbers))
     print("min model number:  %d" % min(numbers))
 
-
-def get_numbers(svts, idx, z_in, partial):
-    """
-    Recursively build the numbers.  Append to the list once the terminal tuple
-    is reached.
-    """
-
-    numbers = list()
-    
-    if idx == len(svts):
-        numbers.append(int(partial))
-    
-    else:
-        for vt in svts[idx]:
-            if vt[0] == z_in:
-                numbers += get_numbers(svts, idx + 1, vt[1], partial + str(vt[2]))
-    
-    return numbers
-
 def get_stages_poss_out(stages):
     """
     Forward enumeration phase.
@@ -254,6 +235,24 @@ def get_stages_valid_tuples(stages, stages_poss_out):
         valid_out = valid_in
     
     return stages_valid_tuples
+
+def get_numbers(svts, idx, z_in, partial):
+    """
+    Recursively build the numbers.  Append to the list once the terminal tuple
+    is reached.
+    """
+
+    numbers = list()
+    
+    if idx == len(svts):
+        numbers.append(int(partial))
+    
+    else:
+        for vt in svts[idx]:
+            if vt[0] == z_in:
+                numbers += get_numbers(svts, idx + 1, vt[1], partial + str(vt[2]))
+    
+    return numbers
 
 def validate(ops, model_number):
     """
