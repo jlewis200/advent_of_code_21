@@ -5,17 +5,25 @@ from itertools import product
 from code import interact
 
 file_name = "input"
-#file_name = "test_data"
 
 class Sensor:
 
+    transforms = None 
+
     def __init__(self):
         self.beacons = list()
+        if Sensor.transforms is None:
+            Sensor.transforms = self.get_transforms()
 
     def add_beacon(self, line):
         self.beacons.append(line.split(","))
 
     def convert(self):
+        """
+        Convert beacon list to np array.
+        Find all pair-wise inter-beacon distances. 
+        """
+
         self.beacons = np.asarray(self.beacons, dtype=np.int32)
         self.dist = np.zeros(shape=(self.beacons.shape[0], self.beacons.shape[0]), dtype=np.float64)
 
@@ -30,163 +38,159 @@ class Sensor:
                     (self.beacons[idx][1] - self.beacons[jdx][1])**2 + 
                     (self.beacons[idx][2] - self.beacons[jdx][2])**2) ** 0.5
 
+    def get_transforms(self):
+        """
+        Generate the 24 unique transformation matricies
+        """
 
-with open(file_name, "r") as in_file:
-    
-    sensors = list()
+        #define the basic identity and rotation matrices
+        ident = np.asarray([[ 1,  0,  0], 
+                            [ 0,  1,  0], 
+                            [ 0,  0,  1]])
 
-    for line in in_file:
-        line = line.strip()
+        rot_y = np.asarray([[ 0,  0,  1], 
+                            [ 0,  1,  0], 
+                            [-1,  0,  0]])
 
-        if len(line) < 1:
-            continue
+        rot_x = np.asarray([[ 1,  0,  0], 
+                            [ 0,  0, -1], 
+                            [ 0,  1,  0]])
 
-        elif "---" in line:
-            sensors.append(Sensor())
+        rot_z = np.asarray([[ 0, -1,  0], 
+                            [ 1,  0,  0], 
+                            [ 0,  0,  1]])
 
-        else:
-            sensors[-1].add_beacon(line)
+        #generate the 24 unique transformation matrices
+        transforms = list()
 
-    for sensor in sensors:
-        sensor.convert()
+        #generate every possible combination of 0-3 rotations about each axis
+        for x in range(4):
+            for y in range(4):
+                for z in range(4):
 
-    overlaps = list()
+                    transform = ident.copy()
 
-    for idx in range(len(sensors) - 1):
-        for jdx in range(idx + 1, len(sensors)):
-            #67 indicates overlap:  12*11/2 == 66 + 1 for 0
-            tmp = np.intersect1d(sensors[idx].dist, sensors[jdx].dist)
-            if tmp.shape[0] == 67:
-                overlaps.append((idx, jdx, tmp))
-    print(overlaps)
+                    for _ in range(x):
+                        transform = rot_x @ transform
+                    
+                    for _ in range(y):
+                        transform = rot_y @ transform
 
-    ident = np.asarray([[ 1,  0,  0], 
-                        [ 0,  1,  0], 
-                        [ 0,  0,  1]])
+                    for _ in range(z):
+                        transform = rot_z @ transform
 
-    rot_y = np.asarray([[ 0,  0,  1], 
-                        [ 0,  1,  0], 
-                        [-1,  0,  0]])
+                    transforms.append(transform.copy())
 
-    rot_x = np.asarray([[ 1,  0,  0], 
-                        [ 0,  0, -1], 
-                        [ 0,  1,  0]])
+        #convert to numpy array and retain only the 24 unique transfomation matrices
+        transforms = np.asarray(transforms)
+        transforms = np.unique(transforms, axis=0)
+        return transforms
 
-    rot_z = np.asarray([[ 0, -1,  0], 
-                        [ 1,  0,  0], 
-                        [ 0,  0,  1]])
+def get_sensors():
+    with open(file_name, "r") as in_file:
+        
+        #build sensor list
+        sensors = list()
 
+        for line in in_file:
+            line = line.strip()
 
-    ref_y = np.asarray([[ 1,  0,  0], 
-                        [ 0, -1,  0], 
-                        [ 0,  0,  1]])
-    transforms = list()
-
-    for x in range(4):
-        for y in range(4):
-            for z in range(4):
-
-                transform = ident.copy()
-
-                for _ in range(x):
-                    transform = rot_x.dot(transform)
-                
-                for _ in range(y):
-                    transform = rot_y.dot(transform)
-
-                for _ in range(z):
-                    transform = rot_z.dot(transform)
-
-                transforms.append(transform.copy())
-                
-                transform = ref_y.dot(transform)
-                transforms.append(transform.copy())
-
-    transforms = np.asarray(transforms)
-    transforms = np.unique(transforms, axis=0)
-    complete = set()
-    complete.add(0)
-    scanner_centers = [(0,0,0)]
-
-    while len(complete) < len(sensors):
-        for overlap in overlaps:
-   
-            if overlap[0] in complete and overlap[1] not in complete:
-                src = overlap[0]
-                dst = overlap[1]
-
-            elif overlap[1] in complete and overlap[0] not in complete:
-                src = overlap[1]
-                dst = overlap[0]
-
-            else:
+            if len(line) < 1:
                 continue
 
+            elif "---" in line:
+                sensors.append(Sensor())
 
-            s1 = sensors[src]
-            s2 = sensors[dst]
-            print(src)
-            print(dst)
-            pairs = list()
+            else:
+                sensors[-1].add_beacon(line)
+
+        for sensor in sensors:
+            sensor.convert()
+
+    return sensors
+
+
+sensors = get_sensors()
+#find sensor-to-sensor overlaps
+sensor_overlaps = list()
+
+for idx in range(len(sensors) - 1):
+    for jdx in range(idx + 1, len(sensors)):
+        #intersect1d returns the number of identical pairwise distances
+        tmp = np.intersect1d(sensors[idx].dist, sensors[jdx].dist)
+        #67 indicates sensor_overlap:  12*11/2 == 66 + 1 for 0
+        if tmp.shape[0] == 67:
+            sensor_overlaps.append((sensors[idx], sensors[jdx]))
+
+#this section determines the correct rotation of each sensor relative to sensor 0 and accumulates the unique beacons into a single list
+#the complete set tracks which sensor indexes are complete
+complete = set()
+complete.add(sensors[0])
+scanner_centers = [(0,0,0)]
+sensor_overlaps = set(sensor_overlaps)
+
+#loop while there are incomplete sensors
+while len(complete) < len(sensors):
+    for sensor_overlap in sensor_overlaps:
+        #only attempt to match the known overlapping sensors/beacons if one of them is complete and one is incomplete
+        #being complete means that the correct transform of the sensor has been applied to orient the sensor relative to sensor 0
+        if sensor_overlap[0] in complete and sensor_overlap[1] not in complete:
+            src = sensor_overlap[0]
+            dst = sensor_overlap[1]
+
+        elif sensor_overlap[1] in complete and sensor_overlap[0] not in complete:
+            src = sensor_overlap[1]
+            dst = sensor_overlap[0]
+
+       
+        #continue to next sensor overlap if both sensors are incomplete or both sensors are complete
+        else:
+            continue
+
     
-            for idx, jdx in product(range(s1.dist.shape[0]), range(s2.dist.shape[0])):
-                tmp = np.intersect1d(s1.dist[idx], s2.dist[jdx])
-    #            print("intersection %d %d %d" % (idx, jdx, tmp.shape[0]))
+        #determine the mapping from source-sensor-beacon-index to destination-sensor-beacon-index
+        pairs = list()
+
+        for idx in range(src.dist.shape[0]):
+            for jdx in range(idx, dst.dist.shape[0]):
+                #check for 12 identical pairwise-distances using src-beacon-idx and dest-beacon-jdx as the base of measurement
+                #this indicates src.beacons[idx] and dst.beacons[jdx] are the same beacon
+                tmp = np.intersect1d(src.dist[idx], dst.dist[jdx])
                 if tmp.shape[0] == 12:
-                    
-                    print("=" * 80)
-                    print("matches")
-    
-                    for match in tmp:
-                        print(np.nonzero(s1.dist[idx] == match))
-                        print(np.nonzero(s2.dist[jdx] == match))
-                        print()
-                        i1 = np.nonzero(s1.dist[idx] == match)[0][0]
-                        i2 = np.nonzero(s2.dist[jdx] == match)[0][0]
-                        #pairs contains line-order mapping of beacons from s1 to s2
-                        pairs.append((i1, i2))
-    
-                    break
-                    print()
-    
-            #for each pair
-            #calculate s2 center relative to s1
-            #if different, transform and try again
-    
-    
-            for transform in transforms:
-                tmp = transform.dot(s2.beacons.T).T
-                        
-                s2_centers = list()
-                for iii, yyy in pairs:
-                    s2_centers.append(tuple(s1.beacons[iii] - tmp[yyy]))
-    
-                print(set(s2_centers))
-                if len(set(s2_centers)) == 1:
+                    pairs.append((idx, jdx))
 
-                    scanner_centers.append(s2_centers.pop())
-                    s2.beacons = tmp + scanner_centers[-1] 
-                    complete.add(dst)
-                    break
-            print()
-            print()
-   
-        concatenated = np.concatenate([sensors[idx].beacons for idx in range(len(sensors))])
-        concat_uniq = np.unique(concatenated, axis=0)
-        print(concat_uniq.shape)
+        for transform in Sensor.transforms:
+            #apply a transform to dst
+            tmp = dst.beacons @ transform
+            
+            #calculate dst center relative to src based on each beacon
+            dst_centers = list()
 
-    max_dist = 0
-    for idx in range(len(sensors) - 1):
-        for jdx in range(idx, len(sensors)):
-            dist = abs(scanner_centers[idx][0] - scanner_centers[jdx][0]) + \
-                   abs(scanner_centers[idx][1] - scanner_centers[jdx][1]) + \
-                   abs(scanner_centers[idx][2] - scanner_centers[jdx][2])
+            for iii, yyy in pairs:
+                dst_centers.append(tuple(src.beacons[iii] - tmp[yyy]))
 
-            if dist > max_dist:
-                max_dist = dist
-    print(max_dist)
-    interact(local=locals()) 
+            #if the number of dst_centers is 1, this indicates the transform was correct
+            if len(set(dst_centers)) == 1:
+                #add the scanner_center to the list of scanner centers
+                scanner_centers.append(dst_centers.pop())
 
+                #set the beacons to the transformed orientation and apply the linear offset of the scanner center
+                dst.beacons = tmp + scanner_centers[-1] 
+                complete.add(dst)
+                break
 
+concatenated = np.concatenate([sensors[idx].beacons for idx in range(len(sensors))])
+concat_uniq = np.unique(concatenated, axis=0)
+print(concat_uniq.shape)
 
+max_dist = 0
+for idx in range(len(sensors) - 1):
+    for jdx in range(idx, len(sensors)):
+        dist = abs(scanner_centers[idx][0] - scanner_centers[jdx][0]) + \
+               abs(scanner_centers[idx][1] - scanner_centers[jdx][1]) + \
+               abs(scanner_centers[idx][2] - scanner_centers[jdx][2])
 
+        if dist > max_dist:
+            max_dist = dist
+print(max_dist)
+#interact(local=locals()) 
