@@ -5,12 +5,14 @@ from itertools import product
 from code import interact
 
 file_name = "input"
+#file_name = "test_data"
 
 class Sensor:
 
     transforms = None 
 
     def __init__(self):
+        self.oriented = False
         self.beacons = list()
         if Sensor.transforms is None:
             Sensor.transforms = self.get_transforms()
@@ -86,6 +88,51 @@ class Sensor:
         transforms = np.unique(transforms, axis=0)
         return transforms
 
+    def orient(self, sensors, sensor_overlaps, scanner_centers):
+
+        for sensor_overlap in sensor_overlaps:
+            if self == sensor_overlap[0] and not sensor_overlap[1].oriented:
+                dst = sensor_overlap[1]
+
+            elif self == sensor_overlap[1] and not sensor_overlap[0].oriented:
+                dst = sensor_overlap[0]
+
+            else:
+                continue
+
+            #determine the mapping from source-sensor-beacon-index to destination-sensor-beacon-index
+            pairs = list()
+
+            for idx in range(self.dist.shape[0]):
+                for jdx in range(idx, dst.dist.shape[0]):
+                    #check for 12 identical pairwise-distances using src-beacon-idx and dest-beacon-jdx as the base of measurement
+                    #this indicates src.beacons[idx] and dst.beacons[jdx] are the same beacon
+                    tmp = np.intersect1d(self.dist[idx], dst.dist[jdx])
+                    if tmp.shape[0] == 12:
+                        pairs.append((idx, jdx))
+
+            for transform in Sensor.transforms:
+                #apply a transform to dst
+                tmp = dst.beacons @ transform
+                
+                #calculate dst center relative to src based on each beacon
+                dst_centers = list()
+
+                for iii, yyy in pairs:
+                    dst_centers.append(tuple(self.beacons[iii] - tmp[yyy]))
+
+                #if the number of dst_centers is 1, this indicates the transform was correct
+                if len(set(dst_centers)) == 1:
+                    #add the scanner_center to the list of scanner centers
+                    scanner_centers.append(dst_centers.pop())
+
+                    #set the beacons to the transformed orientation and apply the linear offset of the scanner center
+                    dst.beacons = tmp + scanner_centers[-1] 
+                    dst.oriented = True
+                    dst.orient(sensors, sensor_overlaps, scanner_centers)
+                    break
+
+
 def get_sensors():
     with open(file_name, "r") as in_file:
         
@@ -122,6 +169,7 @@ for idx in range(len(sensors) - 1):
         if tmp.shape[0] == 67:
             sensor_overlaps.append((sensors[idx], sensors[jdx]))
 
+
 #this section determines the correct rotation of each sensor relative to sensor 0 and accumulates the unique beacons into a single list
 #the complete set tracks which sensor indexes are complete
 complete = set()
@@ -129,56 +177,8 @@ complete.add(sensors[0])
 scanner_centers = [(0,0,0)]
 sensor_overlaps = set(sensor_overlaps)
 
-#loop while there are incomplete sensors
-while len(complete) < len(sensors):
-    for sensor_overlap in sensor_overlaps:
-        #only attempt to match the known overlapping sensors/beacons if one of them is complete and one is incomplete
-        #being complete means that the correct transform of the sensor has been applied to orient the sensor relative to sensor 0
-        if sensor_overlap[0] in complete and sensor_overlap[1] not in complete:
-            src = sensor_overlap[0]
-            dst = sensor_overlap[1]
-
-        elif sensor_overlap[1] in complete and sensor_overlap[0] not in complete:
-            src = sensor_overlap[1]
-            dst = sensor_overlap[0]
-
-       
-        #continue to next sensor overlap if both sensors are incomplete or both sensors are complete
-        else:
-            continue
-
-    
-        #determine the mapping from source-sensor-beacon-index to destination-sensor-beacon-index
-        pairs = list()
-
-        for idx in range(src.dist.shape[0]):
-            for jdx in range(idx, dst.dist.shape[0]):
-                #check for 12 identical pairwise-distances using src-beacon-idx and dest-beacon-jdx as the base of measurement
-                #this indicates src.beacons[idx] and dst.beacons[jdx] are the same beacon
-                tmp = np.intersect1d(src.dist[idx], dst.dist[jdx])
-                if tmp.shape[0] == 12:
-                    pairs.append((idx, jdx))
-
-        for transform in Sensor.transforms:
-            #apply a transform to dst
-            tmp = dst.beacons @ transform
-            
-            #calculate dst center relative to src based on each beacon
-            dst_centers = list()
-
-            for iii, yyy in pairs:
-                dst_centers.append(tuple(src.beacons[iii] - tmp[yyy]))
-
-            #if the number of dst_centers is 1, this indicates the transform was correct
-            if len(set(dst_centers)) == 1:
-                #add the scanner_center to the list of scanner centers
-                scanner_centers.append(dst_centers.pop())
-
-                #set the beacons to the transformed orientation and apply the linear offset of the scanner center
-                dst.beacons = tmp + scanner_centers[-1] 
-                complete.add(dst)
-                break
-
+sensors[0].oriented = True
+sensors[0].orient(sensors, sensor_overlaps, scanner_centers)
 concatenated = np.concatenate([sensors[idx].beacons for idx in range(len(sensors))])
 concat_uniq = np.unique(concatenated, axis=0)
 print(concat_uniq.shape)
@@ -189,8 +189,9 @@ for idx in range(len(sensors) - 1):
         dist = abs(scanner_centers[idx][0] - scanner_centers[jdx][0]) + \
                abs(scanner_centers[idx][1] - scanner_centers[jdx][1]) + \
                abs(scanner_centers[idx][2] - scanner_centers[jdx][2])
-
+ 
         if dist > max_dist:
             max_dist = dist
+
 print(max_dist)
 #interact(local=locals()) 
