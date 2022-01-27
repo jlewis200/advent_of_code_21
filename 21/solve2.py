@@ -100,11 +100,13 @@ class Node:
                 child.ttw_freq(freq_dict, freq * self.freq, rolls + 1)
 
         else:
+            val = freq * self.freq
+            
             try:
-                freq_dict[rolls] += freq * self.freq
+                freq_dict[rolls] += val
 
             except KeyError:
-                freq_dict[rolls] = freq * self.freq
+                freq_dict[rolls] = val
 
 
 p1, p2 = get_input()
@@ -165,4 +167,5 @@ for idx in range(1, 11):
 print()
 total_universes = 444356092776315 + 341960390180808
 print("tu: %d" % total_universes)
+print("tn: %d" % Node.count)
 interact(local=locals())

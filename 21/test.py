@@ -1,88 +1,58 @@
 #!/usr/bin/python3
+import dash
+import math
 
-from itertools import product
+import dash_cytoscape as cyto
+import dash_html_components as html
 
-freq = dict()
+app = dash.Dash(__name__)
 
-class N:
-    def __init__(self):
-        self.n = 0
+nodes = [
+    {
+        'data': {'id': short, 'label': label}
+    }
+    for short, label in (
+        ('la', 'Los Angeles'),
+        ('nyc', 'New York'),
+        ('to', 'Toronto'),
+        ('mtl', 'Montreal'),
+        ('van', 'Vancouver'),
+        ('chi', 'Chicago'),
+        ('bos', 'Boston'),
+        ('hou', 'Houston')
+    )
+]
 
-n = N()
+edges = [
+    {'data': {'source': source, 'target': target}}
+    for source, target in (
+        ('van', 'la'),
+        ('la', 'chi'),
+        ('hou', 'chi'),
+        ('to', 'mtl'),
+        ('mtl', 'bos'),
+        ('nyc', 'bos'),
+        ('to', 'hou'),
+        ('to', 'nyc'),
+        ('la', 'nyc'),
+        ('nyc', 'bos')
+    )
+]
+elements = nodes + edges
+import code
+code.interact(local=locals())
 
-def calc(n, pos, score, depth, roll):
-    pos += roll
+app.layout = html.Div([
+    cyto.Cytoscape(
+        id='cytoscape-layout-6',
+        elements=elements,
+        style={'width': '100%', 'height': '350px'},
+        layout={
+            'name': 'breadthfirst',
+            'roots': '[id = "nyc"]'
+        }
+    )
+])
 
-    while pos > 10:
-        pos -= 10
-  
-    if depth % 3 == 0:
-        score += pos
-
-    if depth >= 9:
-        if score >= 21:
-            n.n += 1
-        return
-
-    else:
-        calc(n, pos, score, depth + 1, 1)
-        calc(n, pos, score, depth + 1, 2)
-        calc(n, pos, score, depth + 1, 3)
-
-init = 10
-
-for init in range(1, 11):
-    n.n = 0
-    calc(n, init, 0, 1, 1)
-    calc(n, init, 0, 1, 2)
-    calc(n, init, 0, 1, 3)
-    print(n.n)   
-    
-    
-    win = 0
-    loss = 0
-    
-    for a in range(1, 4):
-        for b in range(1, 4):
-            for c in range(1, 4):
-                for d in range(1, 4):
-                    for e in range(1, 4):
-                        for f in range(1, 4):
-                            for g in range(1, 4):
-                                for h in range(1, 4):
-                                    for i in range(1, 4):
-               
-                                        pos = init
-                                        score = 0
-                            
-                                        pos += a + b + c
-                            
-                                        if pos > 10:
-                                            pos -= 10
-                            
-                                        score += pos
-                            
-                                        pos += d + e + f
-                            
-                                        if pos > 10:
-                                            pos -= 10
-                            
-                                        score += pos
-                            
-                                        pos += g + h + i 
-                            
-                                        if pos > 10:
-                                            pos -= 10
-                            
-                                        score += pos
-                            
-                                        if score >= 21:
-                                            win += 1
-                                        else:
-                                            loss += 1
-    
-    
-    print(win)
-    print(win+loss)
-from code import interact
-interact(local=locals())
+if __name__ == '__main__':
+    app.run_server(debug=True)
