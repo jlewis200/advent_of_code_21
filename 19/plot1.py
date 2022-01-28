@@ -352,3 +352,6 @@ with open(file_name, "r") as in_file:
     fig = go.Figure(data=[overlap_trace, nonoverlap_trace, centers_trace])
     fig.update_layout(title_text="Comined Transformed Beacons")
     fig.show()
+
+    import code
+    code.interact(local=locals())

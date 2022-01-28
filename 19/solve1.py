@@ -89,16 +89,18 @@ class Sensor:
         #determine the mapping from source-sensor-beacon-index to destination-sensor-beacon-index
         pairs = list()
 
-        #intersect1d returns the values shared between the 3D arrays, and the indices into the flattened 1D arrays
-        intersection_set, src_indices, dst_indices = np.intersect1d(self.dist, dst.dist, return_indices=True)
+        #intersect1d returns the values shared between the 3D arrays
+        intersection_set = np.intersect1d(self.dist, dst.dist)
 
         #a shape of 67 implies the self sensor and the destination sensor have 12 overlapping beacons
         #(12 * 11) / 2 unique pairwise distances
-        #this check is optional, but speeds up execution quite a bit because it skips the pairwise comparisons below on non-overlapping sensors
+        #this check is optional, but speeds up execution quite a bit because it skips the pairwise comparisons below on 
+        #non-overlapping sensors
         if intersection_set.shape[0] == 67: 
             for idx in range(self.dist.shape[0]):
                 for jdx in range(dst.dist.shape[0]):
-                    #check for 12 identical pairwise-distances using src-beacon-idx and dest-beacon-jdx as the base of measurement
+                    #check for 12 identical pairwise-distances using src-beacon-idx and dest-beacon-jdx as the base of 
+                    #measurement
                     #this indicates src.beacons[idx] and dst.beacons[jdx] are the same beacon
                     tmp = np.intersect1d(self.dist[idx], dst.dist[jdx])
                     if tmp.shape[0] == 12:
@@ -126,13 +128,13 @@ class Sensor:
                 tmp = dst.beacons @ transform
                 
                 #calculate dst center relative to src based on each beacon
-                dst_centers = list()
+                dst_centers = set()
 
                 for idx, jdx in pairs:
-                    dst_centers.append(tuple(self.beacons[idx] - tmp[jdx]))
+                    dst_centers.add(tuple(self.beacons[idx] - tmp[jdx]))
 
                 #if the number of dst_centers is 1, this indicates the transform was correct
-                if len(set(dst_centers)) == 1:
+                if len(dst_centers) == 1:
                     #add the scanner_center to the list of scanner centers
                     Sensor.sensor_centers.append(dst_centers.pop())
 
@@ -157,7 +159,7 @@ with open(file_name, "r") as in_file:
 
     max_dist = 0
     for idx in range(len(sensors) - 1):
-        for jdx in range(idx, len(sensors)):
+        for jdx in range(idx + 1, len(sensors)):
             dist = abs(Sensor.sensor_centers[idx][0] - Sensor.sensor_centers[jdx][0]) + \
                    abs(Sensor.sensor_centers[idx][1] - Sensor.sensor_centers[jdx][1]) + \
                    abs(Sensor.sensor_centers[idx][2] - Sensor.sensor_centers[jdx][2])
