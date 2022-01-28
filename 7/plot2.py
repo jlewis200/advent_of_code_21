@@ -43,12 +43,12 @@ plt.savefig("part2a.png")
 
 fig, ax = plt.subplots(2, sharex=True, gridspec_kw={'hspace': 0.12})
 
-df.plot(ax=ax[0], color='black', style='-')
-ax[0].axhline(h_line)
-ax[0].axvline(v_line)
-ax[0].set(ylabel='Fuel', title='Part 1 Fuel Function')
-ax[0].legend(loc='best', shadow=True, fontsize='small', facecolor='#d0d0d0')
-ax[0].grid(axis='both')
+df.plot(ax=ax[1], color='black', style='-')
+ax[1].axhline(h_line)
+ax[1].axvline(v_line)
+ax[1].set(ylabel='Fuel', title='Part 2 Fuel Function')
+ax[1].legend(loc='best', shadow=True, fontsize='small', facecolor='#d0d0d0')
+ax[1].grid(axis='both')
 
 fuel = np.asarray([np.vectorize(get_fuel2)(X, y[idx]).sum() for idx in range(y.shape[0])])
 df = pd.DataFrame([y, fuel])
@@ -57,12 +57,12 @@ df.rename(columns={1:'Fuel'}, inplace=True)
 v_line = y[fuel.argmin()]
 h_line = fuel[fuel.argmin()]
 
-df.plot(ax=ax[1], color='black', style='-')
-ax[1].axhline(h_line)
-ax[1].axvline(v_line)
-ax[1].set(ylabel='Fuel', title='Part 2 Fuel Function')
-ax[1].legend(loc='best', shadow=True, fontsize='small', facecolor='#d0d0d0')
-ax[1].grid(axis='both')
+df.plot(ax=ax[0], color='black', style='-')
+ax[0].axhline(h_line)
+ax[0].axvline(v_line)
+ax[0].set(ylabel='Fuel', title='Part 1 Fuel Function')
+ax[0].legend(loc='best', shadow=True, fontsize='small', facecolor='#d0d0d0')
+ax[0].grid(axis='both')
 
 plt.suptitle('Fuel Function Comparison')
 plt.xlabel('Crab Collection Point')
