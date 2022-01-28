@@ -24,6 +24,7 @@ class Sensor:
         self.visited = False
         self.adjacencies = list()
         self.overlap_beacons = set()
+        self.overlap_original_beacons = set()
 
         if Sensor.transforms is None:
             Sensor.transforms = self.get_transforms()
@@ -107,6 +108,8 @@ class Sensor:
         if intersection_set.shape[0] == 67: 
             self.adjacencies.append(dst)
 
+
+
             for idx in range(self.dist.shape[0]):
                 for jdx in range(dst.dist.shape[0]):
                     #check for 12 identical pairwise-distances using src-beacon-idx and dest-beacon-jdx as the base of measurement
@@ -114,7 +117,6 @@ class Sensor:
                     tmp = np.intersect1d(self.dist[idx], dst.dist[jdx])
                     if tmp.shape[0] == 12:
                         pairs.append((idx, jdx))
-
 
         return pairs
 
@@ -131,6 +133,8 @@ class Sensor:
         if intersection_set.shape[0] == 67: 
             self.adjacencies.append(dst)
 
+
+
             for idx in range(self.dist.shape[0]):
                 for jdx in range(dst.dist.shape[0]):
                     #check for 12 identical pairwise-distances using src-beacon-idx and dest-beacon-jdx as the base of measurement
@@ -142,8 +146,8 @@ class Sensor:
                         if self == Sensor.sensors[0] and dst == self.adjacencies[0]:
                             self.overlap_beacons.add(tuple(self.beacons[idx]))
                             dst.overlap_beacons.add(tuple(dst.beacons[jdx]))
-
-        return pairs
+                            self.overlap_original_beacons.add(tuple(self.original_beacons[idx]))
+                            dst.overlap_original_beacons.add(tuple(dst.original_beacons[jdx]))
 
 
     def orient_peers(self):
@@ -182,8 +186,14 @@ class Sensor:
                     
                     for pair in pairs:
                         Sensor.overlap_beacons.add(tuple(self.beacons[pair[0]]))
+                       
+                        idx, jdx = pair
+                        if self == Sensor.sensors[0] and dst == self.adjacencies[0]:
+                            self.overlap_beacons.add(tuple(self.beacons[idx]))
+                            dst.overlap_beacons.add(tuple(dst.beacons[jdx]))
+                            self.overlap_original_beacons.add(tuple(self.original_beacons[idx]))
+                            dst.overlap_original_beacons.add(tuple(dst.original_beacons[jdx]))
 
-                    self.get_pairs2(dst)
                     dst.orient_peers()
                     break
 
@@ -211,7 +221,7 @@ with open(file_name, "r") as in_file:
             if dist > max_dist:
                 max_dist = dist
     print(max_dist)
-
+    
     #plot root and adjacent sensors with original data orientation
     #plot overlapping and non-overlapping beacons by color
     #plot sensor centers 
@@ -219,7 +229,7 @@ with open(file_name, "r") as in_file:
     fig.update_layout(title_text="Original/Non-Transformed Beacons")
 
     for row, col, sensor in zip([1, 1], [1, 2], [sensors[0], sensors[0].adjacencies[0]]):
-        overlap_beacons = sensor.overlap_beacons
+        overlap_beacons = sensor.overlap_original_beacons
         nonoverlap_beacons = set()
         
         #for beacon in sensor.original_beacons:
@@ -249,8 +259,6 @@ with open(file_name, "r") as in_file:
                marker=dict(color="black", size=5),
                name="Non-Overlapping Beacons"
               )
-
-        beacons = np.asarray(list(Sensor.sensor_centers)).T
 
         fig.add_trace(overlap_trace, row=row, col=col)
         fig.add_trace(nonoverlap_trace, row=row, col=col)
@@ -294,8 +302,6 @@ with open(file_name, "r") as in_file:
                marker=dict(color="black", size=5),
                name="Non-Overlapping Beacons"
               )
-
-        beacons = np.asarray(list(Sensor.sensor_centers)).T
 
         fig.add_trace(overlap_trace, row=row, col=col)
         fig.add_trace(nonoverlap_trace, row=row, col=col)
@@ -346,4 +352,3 @@ with open(file_name, "r") as in_file:
     fig = go.Figure(data=[overlap_trace, nonoverlap_trace, centers_trace])
     fig.update_layout(title_text="Comined Transformed Beacons")
     fig.show()
-

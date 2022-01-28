@@ -166,3 +166,6 @@ with open(file_name, "r") as in_file:
                 max_dist = dist
 
     print(max_dist)
+
+    import code
+    code.interact(local=locals())
